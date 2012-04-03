@@ -51,6 +51,24 @@ def derp_chests(chunk, randomitems):
                                                                 TAG_Short(name="Damage", value=int(randomitem[1])),
                                                                 TAG_Short(name="id", value=int(randomitem[0]))
                                                         ])
+                                                        if len(randomitem) > 4:
+                                                                enchants = TAG_List(name="ench", type=TAG_Compound)
+                                                                count = 4
+                                                                try:
+                                                                        while len(randomitem) > count:
+                                                                                enchant = TAG_Compound()
+                                                                                enchant.tags.extend([
+                                                                                        TAG_Short(name="id", value=int(randomitem[count])),
+                                                                                        TAG_Short(name="lvl", value=int(randomitem[count+1]))
+                                                                                ])
+                                                                                enchants.insert((count-4)/2,enchant)
+                                                                                count += 2
+                                                                        tag = TAG_Compound()
+                                                                        tag.tags.extend([enchants])
+                                                                        tag.name = "tag"
+                                                                        item.tags.extend([tag])
+                                                                except IndexError:
+                                                                        print("ERROR: invalid enchant data")
                                                         itemlist.insert(slot,item)
                                                         slot += 1
                                                         updated = True
@@ -68,6 +86,7 @@ def process_world(world_folder, randomitems):
                 return
         for region in world.iter_regions():
                 print(region.filename)
+                chunk_moved = False
                 for chunk in region.iter_chunks():
                         if(derp_chests(chunk["Level"], randomitems)):
                                 x=chunk["Level"]["xPos"].value
@@ -87,10 +106,15 @@ def process_world(world_folder, randomitems):
                                         
                                 print("Updating chests in chunk: x: "+str(x)+" z: "+str(z))
                                 try:
-                                        region.write_chunk(x,z,chunk)
+                                        #print("HERP")
+                                        if(region.write_chunk(x,z,chunk)):
+                                                chunk_moved = True
+                                        #print("DERP")
                                 except ValueError as e:
                                         print("ERROR:  Failed to update chunk.")
                                         print(e)
+                if(chunk_moved):
+                        print("Restructuring region file.")
                                         
 
 def main(world_folder):
