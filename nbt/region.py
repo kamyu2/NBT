@@ -323,6 +323,7 @@ class RegionFile(object):
 		self.file.seek(4096+4*(x+z*32))
 		timestamp = int(time.time())
 		self.file.write(pack(">I", timestamp))
+		return chunk_moved_to_end
 
 
 	def unlink_chunk(self, x, z):
