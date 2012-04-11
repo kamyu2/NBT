@@ -61,6 +61,7 @@ class signframe:
                 
 class SignApp:
         def __init__(self,frame):
+                self.world_folder = " "
                 self.world = " "
                 self.nether = " "
                 self.end = " "
@@ -92,16 +93,37 @@ class SignApp:
                 self.swin.pack()
                 self.win = self.swin.window
                 
+        def reset_worlds(self):
+                if (os.path.exists(self.world_folder+"/region")):
+                        try:
+                                self.world = WorldFolder(self.world_folder)
+                        except:
+                                print("---overworld has no regions---")
+                                return
+                else:
+                        print("Not a valid Minecraft world folder!")
+                        return
+                
+                if (os.path.exists(self.world_folder+"/DIM-1")):
+                        try:
+                                self.nether = WorldFolder(self.world_folder+"/DIM-1")
+                        except:
+                                print("---nether has no regions---")
 
+                if (os.path.exists(self.world_folder+"/DIM1")):
+                        try:
+                                self.end = WorldFolder(self.world_folder+"/DIM1")
+                        except:
+                                print("---end has no regions---")
                 
         def load_dir(self):
                 try:
                         saveFileDir = os.path.join(os.path.join(os.environ['APPDATA'].decode(sys.getfilesystemencoding()), u".minecraft"), u"saves")
                 except:
                         saveFileDir = '.'
-                world_folder = tkFileDialog.askdirectory(parent=self.root,initialdir=saveFileDir,title='Please select a directory')
-                if (not os.path.exists(world_folder)):
-        		print("No such folder as "+world_folder)
+                self.world_folder = tkFileDialog.askdirectory(parent=self.root,initialdir=saveFileDir,title='Please select a directory')
+                if (not os.path.exists(self.world_folder)):
+        		print("No such folder as "+self.world_folder)
                 	return
                 self.world = " "
                 self.nether = " "
@@ -112,8 +134,8 @@ class SignApp:
                 self.swin.destroy()
                 self.swin = Tix.ScrolledWindow(self.root,scrollbar=Tix.Y)
                 self.swin.pack()
-                self.win = self.swin.window	
-                self.main(world_folder,self.win)
+                self.win = self.swin.window
+                self.main(self.world_folder,self.win)
 
         def save_world(self,world1,count):
                 updates = 0
@@ -175,6 +197,7 @@ class SignApp:
                         print("---SAVING END---")
                         count = self.save_world(self.end, count)
                         print("---DONE---")
+                self.reset_worlds()
                         
                                                                 
        
