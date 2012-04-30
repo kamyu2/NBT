@@ -27,56 +27,62 @@ def items_from_nbt(nbtlist):
 			items[id] = 0
 		items[id] += count
 	return items
-   
+
+def process_entity(entity, randomitems):
+        slot = 0
+        updated = False
+        items = items_from_nbt(entity["Items"])
+        if sum(items.values()) == 0:
+                print("empty chest found")
+                itemlist = TAG_List(type=TAG_Compound)
+                for randomitem in randomitems:
+                        if slot < 27:
+                                if random.randrange(0,100) < int(randomitem[3]):
+                                        item = TAG_Compound()
+                                        if int(randomitem[2]) > 127:
+                                                randomitem[2] = '127'
+                                        elif int(randomitem[2]) < 1:
+                                                randomitem[2] = '1'
+                                        item.tags.extend([
+                                                TAG_Byte(name="Count", value=int(randomitem[2])),
+                                                TAG_Byte(name="Slot", value=slot),
+                                                TAG_Short(name="Damage", value=int(randomitem[1])),
+                                                TAG_Short(name="id", value=int(randomitem[0]))
+                                        ])
+                                        if len(randomitem) > 4:
+                                                enchants = TAG_List(name="ench", type=TAG_Compound)
+                                                count = 4
+                                                try:
+                                                        while len(randomitem) > count:
+                                                                enchant = TAG_Compound()
+                                                                enchant.tags.extend([
+                                                                        TAG_Short(name="id", value=int(randomitem[count])),
+                                                                        TAG_Short(name="lvl", value=int(randomitem[count+1]))
+                                                                ])
+                                                                enchants.insert((count-4)/2,enchant)
+                                                                count += 2
+                                                        tag = TAG_Compound()
+                                                        tag.tags.extend([enchants])
+                                                        tag.name = "tag"
+                                                        item.tags.extend([tag])
+                                                except IndexError:
+                                                        print("ERROR: invalid enchant data")
+                                        itemlist.insert(slot,item)
+                                        slot += 1
+                                        updated = True
+                if updated:
+                        entity["Items"] = itemlist
+        return updated
+                                
 def derp_chests(chunk, randomitems):
         updated = False
         for entity in chunk['TileEntities']:
-                slot = 0
-		if entity["id"].value == "Chest":
-                        items = items_from_nbt(entity["Items"])
-			if sum(items.values()) == 0:
-                                print("empty chest found")
-                                itemlist = TAG_List(type=TAG_Compound)
-                                for randomitem in randomitems:
-                                        if slot < 27:
-                                                if random.randrange(0,100) < int(randomitem[3]):
-                                                        item = TAG_Compound()
-                                                        if int(randomitem[2]) > 127:
-                                                                randomitem[2] = '127'
-                                                        elif int(randomitem[2]) < 1:
-                                                                randomitem[2] = '1'
-                                                        item.tags.extend([
-                                                                TAG_Byte(name="Count", value=int(randomitem[2])),
-                                                                TAG_Byte(name="Slot", value=slot),
-                                                                TAG_Short(name="Damage", value=int(randomitem[1])),
-                                                                TAG_Short(name="id", value=int(randomitem[0]))
-                                                        ])
-                                                        if len(randomitem) > 4:
-                                                                enchants = TAG_List(name="ench", type=TAG_Compound)
-                                                                count = 4
-                                                                try:
-                                                                        while len(randomitem) > count:
-                                                                                enchant = TAG_Compound()
-                                                                                enchant.tags.extend([
-                                                                                        TAG_Short(name="id", value=int(randomitem[count])),
-                                                                                        TAG_Short(name="lvl", value=int(randomitem[count+1]))
-                                                                                ])
-                                                                                enchants.insert((count-4)/2,enchant)
-                                                                                count += 2
-                                                                        tag = TAG_Compound()
-                                                                        tag.tags.extend([enchants])
-                                                                        tag.name = "tag"
-                                                                        item.tags.extend([tag])
-                                                                except IndexError:
-                                                                        print("ERROR: invalid enchant data")
-                                                        itemlist.insert(slot,item)
-                                                        slot += 1
-                                                        updated = True
-                                if updated:
-                                        entity["Items"] = itemlist
-                                #print("START TEST TEST TEST")
-                                #print(entity["Items"].pretty_tree())
-                                #print("END TEST TEST TEST")
+                if entity["id"].value == "Chest":
+                        updated = (process_entity(entity, randomitems) or updated)
+        for entity in chunk['Entities']:
+                if entity["id"].value == "Minecart":
+                        if entity["Type"].value == 1:
+                                updated = (process_entity(entity, randomitems) or updated)
         return updated
 
 def process_world(world_folder, randomitems):
@@ -113,8 +119,8 @@ def process_world(world_folder, randomitems):
                                 except ValueError as e:
                                         print("ERROR:  Failed to update chunk.")
                                         print(e)
-                if(chunk_moved):
-                        print("Restructuring region file.")
+#                if(chunk_moved):
+#                        print("Restructuring region file.")
                                         
 
 def main(world_folder):
