@@ -39,12 +39,25 @@ def process_entity(entity, randomitems):
                         if slot < 27:
                                 if random.randrange(0,100) < int(randomitem[3]):
                                         item = TAG_Compound()
-                                        if int(randomitem[2]) > 127:
-                                                randomitem[2] = '127'
-                                        elif int(randomitem[2]) < 1:
-                                                randomitem[2] = '1'
+                                        try:
+                                                quantity = int(randomitem[2])
+                                        except ValueError:
+                                                try:
+                                                        lowrand, highrand = randomitem[2].split('-')
+                                                        quantity = random.randrange(int(lowrand), int(highrand) + 1)
+                                                except ValueError:
+                                                        print("ERROR: Invalid quantity range.  Defaulting to 1.")
+                                                        line = ''
+                                                        for section in randomitem:
+                                                                line += ' ' + section
+                                                        print(line)
+                                                        quantity = 1
+                                        if quantity > 127:
+                                                quantity = 127
+                                        elif quantity < 1:
+                                                quantity = 1
                                         item.tags.extend([
-                                                TAG_Byte(name="Count", value=int(randomitem[2])),
+                                                TAG_Byte(name="Count", value=quantity),
                                                 TAG_Byte(name="Slot", value=slot),
                                                 TAG_Short(name="Damage", value=int(randomitem[1])),
                                                 TAG_Short(name="id", value=int(randomitem[0]))
@@ -67,6 +80,10 @@ def process_entity(entity, randomitems):
                                                         item.tags.extend([tag])
                                                 except IndexError:
                                                         print("ERROR: invalid enchant data")
+                                                        line = ''
+                                                        for section in randomitem:
+                                                                line += ' ' + section
+                                                        print(line)
                                         itemlist.insert(slot,item)
                                         slot += 1
                                         updated = True
